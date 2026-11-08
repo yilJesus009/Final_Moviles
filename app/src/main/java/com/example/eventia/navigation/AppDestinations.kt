@@ -8,6 +8,7 @@ sealed class Screen(val route: String, val title: String) {
     data object Profile : Screen("profile", "Perfil")
 
     // Pantallas secundarias
+    data object Venues : Screen("venues", "Lugares")
     data object EventDetail : Screen("event_detail/{eventId}", "Detalle de Evento") {
         fun createRoute(eventId: Int) = "event_detail/$eventId"
     }
