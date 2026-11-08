@@ -107,8 +107,14 @@ fun DetalleLugarScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.cargarDetalleLugar() }) {
-                            Text("Reintentar")
+                        if (uiState.noEncontrado) {
+                            Button(onClick = onBackClick) {
+                                Text("Volver")
+                            }
+                        } else {
+                            Button(onClick = { viewModel.cargarDetalleLugar() }) {
+                                Text("Reintentar")
+                            }
                         }
                     }
                 }

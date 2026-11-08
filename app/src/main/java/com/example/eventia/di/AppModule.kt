@@ -2,13 +2,18 @@ package com.example.eventia.di
 
 import android.content.Context
 import com.example.eventia.api.EventiaAPI
+import com.example.eventia.datastore.SesionDataStore
 import com.example.eventia.db.AppDatabase
 import com.example.eventia.db.dao.EventoCacheDao
 import com.example.eventia.db.dao.FavoritoDao
+import com.example.eventia.repositories.AuthRepository
+import com.example.eventia.repositories.AuthRepositoryImpl
 import com.example.eventia.repositories.EventoRepository
 import com.example.eventia.repositories.EventoRepositoryImpl
 import com.example.eventia.repositories.FavoritoRepository
 import com.example.eventia.repositories.FavoritoRepositoryImpl
+import com.example.eventia.repositories.InscripcionRepository
+import com.example.eventia.repositories.InscripcionRepositoryImpl
 import com.example.eventia.repositories.LugarRepository
 import com.example.eventia.repositories.LugarRepositoryImpl
 import com.example.eventia.repositories.RetrofitRepository
@@ -21,7 +26,7 @@ import retrofit2.create
 import javax.inject.Singleton
 
 /**
- * Módulo de Hilt: provee las instancias singleton de Retrofit, Room Database, DAOs y Repositorios.
+ * Módulo de Hilt: provee las instancias singleton de Retrofit, Room Database, DAOs, DataStore y Repositorios.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -53,12 +58,31 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideSesionDataStore(@ApplicationContext context: Context): SesionDataStore {
+        return SesionDataStore(context)
+    }
+
+    @Provides
+    @Singleton
     fun provideEventoRepository(
         api: EventiaAPI,
         eventoCacheDao: EventoCacheDao,
-        favoritoDao: FavoritoDao
+        favoritoDao: FavoritoDao,
+        sesion: SesionDataStore
     ): EventoRepository {
-        return EventoRepositoryImpl(api, eventoCacheDao, favoritoDao)
+        return EventoRepositoryImpl(api, eventoCacheDao, favoritoDao, sesion)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(api: EventiaAPI, sesion: SesionDataStore): AuthRepository {
+        return AuthRepositoryImpl(api, sesion)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInscripcionRepository(api: EventiaAPI, sesion: SesionDataStore): InscripcionRepository {
+        return InscripcionRepositoryImpl(api, sesion)
     }
 
     @Provides

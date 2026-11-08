@@ -3,6 +3,7 @@ package com.example.eventia.api.models
 import com.example.eventia.models.Categoria
 import com.example.eventia.models.Evento
 import com.example.eventia.models.Lugar
+import com.example.eventia.models.Usuario
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -12,6 +13,12 @@ import java.time.ZonedDateTime
  * (mismo estilo que toContactUi() en PracticaRoom del docente).
  * Aquí se limpian los nulos para que la UI reciba siempre datos consistentes.
  */
+
+fun UsuarioDto.aDominio() = Usuario(
+    id = id ?: 0,
+    nombre = nombre.orEmpty(),
+    email = email.orEmpty()
+)
 
 fun CategoriaDto.aDominio() = Categoria(
     id = id ?: 0,

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 /**
@@ -23,6 +24,7 @@ data class DetalleLugarUiState(
     val cargando: Boolean = false,
     val lugar: Lugar? = null,
     val eventosProximos: List<Evento> = emptyList(),
+    val noEncontrado: Boolean = false,
     val error: String? = null
 )
 
@@ -47,7 +49,7 @@ class DetalleLugarViewModel @Inject constructor(
 
     fun cargarDetalleLugar() {
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null) }
+            _uiState.update { it.copy(cargando = true, noEncontrado = false, error = null) }
             try {
                 val lugarDeferred = async { repository.getLugarPorId(venueId) }
                 val eventosDeferred = async {
@@ -69,6 +71,24 @@ class DetalleLugarViewModel @Inject constructor(
                         eventosProximos = eventos,
                         error = null
                     )
+                }
+            } catch (e: HttpException) {
+                if (e.code() == 404) {
+                    // Sección 8.3: 404 → recurso inexistente, mostrar mensaje claro y permitir volver
+                    _uiState.update {
+                        it.copy(
+                            cargando = false,
+                            noEncontrado = true,
+                            error = "Este lugar ya no está disponible"
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            cargando = false,
+                            error = "No se pudo cargar la información del lugar. Intenta nuevamente."
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("DetalleLugarViewModel", "Error al cargar detalle del lugar $venueId: ${e.message}", e)

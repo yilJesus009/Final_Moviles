@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
@@ -54,13 +55,14 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Pantalla de Detalle del Evento (RF-02, RF-04, RF-05, RF-09, RF-13).
+ * Pantalla de Detalle del Evento (RF-02, RF-04, RF-05, RF-09, RF-12, RF-13).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleEventoScreen(
     onBackClick: () -> Unit,
     onVenueClick: (Int) -> Unit = {},
+    onLoginClick: () -> Unit = {},
     viewModel: DetalleEventoViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -75,6 +77,13 @@ fun DetalleEventoScreen(
         uiState.mensajeAviso?.let { mensaje ->
             snackbarHostState.showSnackbar(mensaje)
             viewModel.consumirMensajeAviso()
+        }
+    }
+
+    LaunchedEffect(uiState.navegarALogin) {
+        if (uiState.navegarALogin) {
+            viewModel.consumirNavegarALogin()
+            onLoginClick()
         }
     }
 
@@ -137,8 +146,14 @@ fun DetalleEventoScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.cargarDetalle() }) {
-                            Text("Reintentar")
+                        if (uiState.noEncontrado) {
+                            Button(onClick = onBackClick) {
+                                Text("Volver")
+                            }
+                        } else {
+                            Button(onClick = { viewModel.cargarDetalle() }) {
+                                Text("Reintentar")
+                            }
                         }
                     }
                 }
@@ -209,39 +224,90 @@ fun DetalleEventoScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        // Cupos disponibles (RF-02 / RF-12)
+                        // Cupos disponibles e inscripción (RF-02 / RF-12)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(12.dp)
                             ) {
-                                Text(
-                                    text = "Cupos disponibles",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = if (evento.tieneCupos) {
-                                        "${evento.cuposDisponibles} de ${evento.capacidad}"
-                                    } else {
-                                        "Sin cupos disponibles"
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (evento.tieneCupos) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.error
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Cupos disponibles",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = if (evento.tieneCupos) {
+                                            "${evento.cuposDisponibles} de ${evento.capacidad}"
+                                        } else {
+                                            "Sin cupos disponibles"
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (evento.tieneCupos) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.error
+                                        }
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Botón de inscripción que cambia de estado según sesión y cupos (RF-12)
+                                val puedeActuar = !uiState.procesandoInscripcion &&
+                                    (evento.estaInscrito || evento.tieneCupos || !uiState.haySesion)
+
+                                if (evento.estaInscrito) {
+                                    OutlinedButton(
+                                        onClick = { viewModel.gestionarInscripcion() },
+                                        enabled = puedeActuar,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp)
+                                    ) {
+                                        if (uiState.procesandoInscripcion) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Text("Inscrito · Cancelar inscripción")
+                                        }
                                     }
-                                )
+                                } else {
+                                    Button(
+                                        onClick = { viewModel.gestionarInscripcion() },
+                                        enabled = puedeActuar,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp)
+                                    ) {
+                                        if (uiState.procesandoInscripcion) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            val textoBoton = when {
+                                                !uiState.haySesion -> "Inicia sesión para inscribirte"
+                                                evento.tieneCupos -> "Inscribirme a este evento"
+                                                else -> "Evento sin cupos disponibles"
+                                            }
+                                            Text(textoBoton)
+                                        }
+                                    }
+                                }
                             }
                         }
 

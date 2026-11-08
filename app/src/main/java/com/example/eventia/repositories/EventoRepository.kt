@@ -2,6 +2,7 @@ package com.example.eventia.repositories
 
 import com.example.eventia.api.EventiaAPI
 import com.example.eventia.api.models.aDominio
+import com.example.eventia.datastore.SesionDataStore
 import com.example.eventia.db.dao.EventoCacheDao
 import com.example.eventia.db.dao.FavoritoDao
 import com.example.eventia.db.entities.aCacheEntity
@@ -11,6 +12,7 @@ import com.example.eventia.models.Evento
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import retrofit2.HttpException
 import java.time.ZonedDateTime
 import kotlin.math.max
 
@@ -34,7 +36,8 @@ interface EventoRepository {
 class EventoRepositoryImpl(
     private val api: EventiaAPI,
     private val eventoCacheDao: EventoCacheDao,
-    private val favoritoDao: FavoritoDao
+    private val favoritoDao: FavoritoDao,
+    private val sesion: SesionDataStore
 ) : EventoRepository {
 
     private val _avisoSinConexion = MutableStateFlow<String?>(null)
@@ -92,21 +95,44 @@ class EventoRepositoryImpl(
 
     override suspend fun getEventoPorId(id: Int): Evento {
         return try {
-            val remoto = api.getEventoPorId(id).aDominio()
+            val remoto = getEventoRemoto(id)
             _avisoSinConexion.value = null
             remoto
+        } catch (e: HttpException) {
+            // 404: el evento ya no existe, no tiene sentido buscarlo en caché (la UI muestra el aviso)
+            if (e.code() == 404) throw e
+            buscarEventoLocal(id) ?: throw e
         } catch (e: Exception) {
-            // RF-05 y RF-14: Acceso sin conexión al detalle de favoritos o de eventos en caché
-            val desdeFavorito = favoritoDao.getPorId(id)?.aDominio()
-            val desdeCache = eventoCacheDao.getPorId(id)?.aDominio()
-            val local = desdeFavorito ?: desdeCache
-            if (local != null) {
-                val ultimaActualizacion = eventoCacheDao.getUltimaActualizacionMillis()
-                _avisoSinConexion.value = formatearAvisoCache(ultimaActualizacion)
-                local
-            } else {
-                throw e
-            }
+            // RF-05 y RF-14: sin conexión, se busca el detalle en favoritos o en la caché
+            buscarEventoLocal(id) ?: throw e
+        }
+    }
+
+    private suspend fun buscarEventoLocal(id: Int): Evento? {
+        val desdeFavorito = favoritoDao.getPorId(id)?.aDominio()
+        val desdeCache = eventoCacheDao.getPorId(id)?.aDominio()
+        val local = desdeFavorito ?: desdeCache ?: return null
+        val ultimaActualizacion = eventoCacheDao.getUltimaActualizacionMillis()
+        _avisoSinConexion.value = formatearAvisoCache(ultimaActualizacion)
+        return local
+    }
+
+    /**
+     * GET /events/{id} con sesión opcional: si hay token se envía para recibir "isAttending" (RF-12).
+     * Si el token ya no es válido (401) se borra la sesión local y se reintenta sin token,
+     * porque el detalle también debe poder verse sin cuenta.
+     */
+    private suspend fun getEventoRemoto(id: Int): Evento {
+        val token = sesion.obtenerToken()
+        if (token.isNullOrBlank()) {
+            return api.getEventoPorId(id).aDominio()
+        }
+        return try {
+            api.getEventoPorId(id, "Bearer $token").aDominio()
+        } catch (e: HttpException) {
+            if (e.code() != 401) throw e
+            sesion.cerrarSesion()
+            api.getEventoPorId(id).aDominio()
         }
     }
 
