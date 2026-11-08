@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -62,6 +63,11 @@ dependencies {
 
     // Imágenes remotas (Coil)
     implementation(libs.coil.compose)
+
+    // Inyección de dependencias (Hilt)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
