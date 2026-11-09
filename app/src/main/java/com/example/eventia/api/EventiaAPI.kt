@@ -29,10 +29,12 @@ interface EventiaAPI {
     suspend fun getCategorias(): List<CategoriaDto>
 
     // Si "busqueda" o "categoriaId" son null, Retrofit no los envía en la URL
+    // Con token opcional, cada evento incluye "isAttending"
     @GET("events")
     suspend fun getEventos(
         @Query("q") busqueda: String? = null,
-        @Query("category") categoriaId: Int? = null
+        @Query("category") categoriaId: Int? = null,
+        @Header("Authorization") autorizacion: String? = null
     ): List<EventoDto>
 
     // Sesión opcional: con token la respuesta incluye "isAttending"
@@ -68,13 +70,13 @@ interface EventiaAPI {
     suspend fun inscribirse(
         @Path("id") eventoId: Int,
         @Header("Authorization") autorizacion: String
-    )
+    ): EventoDto
 
     @DELETE("events/{id}/attendance")
     suspend fun cancelarInscripcion(
         @Path("id") eventoId: Int,
         @Header("Authorization") autorizacion: String
-    )
+    ): EventoDto
 
     @GET("me/attendances")
     suspend fun getMisInscripciones(@Header("Authorization") autorizacion: String): List<EventoDto>
