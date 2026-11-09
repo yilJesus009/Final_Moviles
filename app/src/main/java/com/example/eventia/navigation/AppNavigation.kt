@@ -16,6 +16,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.eventia.ui.screens.auth.LoginScreen
+import com.example.eventia.ui.screens.auth.RegistroScreen
 import com.example.eventia.ui.screens.catalog.CatalogScreen
 import com.example.eventia.ui.screens.detail.DetalleEventoScreen
 import com.example.eventia.ui.screens.favorites.FavoritesScreen
@@ -82,6 +84,9 @@ fun AppNavigation(
                     onBackClick = { navController.popBackStack() },
                     onVenueClick = { venueId ->
                         navController.navigate(Screen.VenueDetail.createRoute(venueId))
+                    },
+                    onLoginClick = {
+                        navController.navigate(Screen.Login.route)
                     }
                 )
             }
@@ -107,7 +112,11 @@ fun AppNavigation(
                 )
             }
             composable(Screen.Map.route) {
-                MapScreen()
+                MapScreen(
+                    onEventClick = { eventId ->
+                        navController.navigate(Screen.EventDetail.createRoute(eventId))
+                    }
+                )
             }
             composable(Screen.Favorites.route) {
                 FavoritesScreen(
@@ -117,7 +126,35 @@ fun AppNavigation(
                 )
             }
             composable(Screen.Profile.route) {
-                ProfileScreen()
+                ProfileScreen(
+                    onLoginClick = {
+                        navController.navigate(Screen.Login.route)
+                    },
+                    onRegistroClick = {
+                        navController.navigate(Screen.Register.route)
+                    },
+                    onEventClick = { eventId ->
+                        navController.navigate(Screen.EventDetail.createRoute(eventId))
+                    }
+                )
+            }
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onLoginExitoso = { navController.popBackStack() },
+                    onRegistroClick = {
+                        // Reemplaza Login por Registro para que al terminar regrese directo a la pantalla previa
+                        navController.navigate(Screen.Register.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(Screen.Register.route) {
+                RegistroScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onRegistroExitoso = { navController.popBackStack() }
+                )
             }
         }
     }

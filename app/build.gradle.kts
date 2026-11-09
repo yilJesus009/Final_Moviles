@@ -64,6 +64,9 @@ dependencies {
     // Imágenes remotas (Coil)
     implementation(libs.coil.compose)
 
+    // Mapa (osmdroid - OpenStreetMap)
+    implementation(libs.osmdroid.android)
+
     // Inyección de dependencias (Hilt)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
