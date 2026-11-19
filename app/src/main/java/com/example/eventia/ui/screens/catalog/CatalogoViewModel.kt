@@ -80,7 +80,7 @@ class CatalogoViewModel @Inject constructor(
                 val listaCategorias = repository.getCategorias()
                 _uiState.update { it.copy(categorias = listaCategorias) }
             } catch (e: Exception) {
-                Log.e("CatalogoViewModel", "Error al cargar categorías: ${e.message}", e)
+                e.printStackTrace()
             }
         }
     }
@@ -90,17 +90,18 @@ class CatalogoViewModel @Inject constructor(
      * El repositorio decide si los datos provienen de la red o de la caché en Room (RF-14).
      */
     fun cargarEventos() {
+        val estadoActual = _uiState.value
+        val habiaDatosPrevios = estadoActual.eventos.isNotEmpty()
+
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update {
+            it.copy(
+                cargando = !habiaDatosPrevios,
+                error = null
+            )
+        }
+
         viewModelScope.launch {
-            val estadoActual = _uiState.value
-            val habiaDatosPrevios = estadoActual.eventos.isNotEmpty()
-
-            _uiState.update {
-                it.copy(
-                    cargando = !habiaDatosPrevios,
-                    error = null
-                )
-            }
-
             try {
                 val eventos = repository.getEventos(
                     busqueda = estadoActual.textoBusqueda,
@@ -115,7 +116,8 @@ class CatalogoViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("CatalogoViewModel", "Error al obtener eventos: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 // RF-06: si ya había datos en pantalla, se conservan y se muestra un aviso no bloqueante
                 if (_uiState.value.eventos.isNotEmpty()) {
                     _uiState.update {

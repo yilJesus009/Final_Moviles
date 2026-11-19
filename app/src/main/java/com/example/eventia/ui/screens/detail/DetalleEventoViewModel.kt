@@ -90,15 +90,16 @@ class DetalleEventoViewModel @Inject constructor(
     }
 
     fun cargarDetalle() {
+        val yaTeniaEvento = _uiState.value.evento != null
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update {
+            it.copy(
+                cargando = !yaTeniaEvento,
+                noEncontrado = false,
+                error = null
+            )
+        }
         viewModelScope.launch {
-            val yaTeniaEvento = _uiState.value.evento != null
-            _uiState.update {
-                it.copy(
-                    cargando = !yaTeniaEvento,
-                    noEncontrado = false,
-                    error = null
-                )
-            }
             try {
                 val evento = repository.getEventoPorId(eventId)
                 _uiState.update {
@@ -109,6 +110,7 @@ class DetalleEventoViewModel @Inject constructor(
                     )
                 }
             } catch (e: HttpException) {
+                e.printStackTrace()
                 if (e.code() == 404) {
                     // Sección 8.3: 404 → "Este evento ya no está disponible" y permitir volver
                     _uiState.update {
@@ -127,7 +129,8 @@ class DetalleEventoViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.e("DetalleEventoViewModel", "Error al cargar detalle del evento $eventId: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,
@@ -214,7 +217,8 @@ class DetalleEventoViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("DetalleEventoViewModel", "Error en inscripción: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         procesandoInscripcion = false,

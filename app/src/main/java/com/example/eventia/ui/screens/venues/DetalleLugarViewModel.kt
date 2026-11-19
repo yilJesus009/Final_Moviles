@@ -48,15 +48,16 @@ class DetalleLugarViewModel @Inject constructor(
     }
 
     fun cargarDetalleLugar() {
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update { it.copy(cargando = true, noEncontrado = false, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, noEncontrado = false, error = null) }
             try {
                 val lugarDeferred = async { repository.getLugarPorId(venueId) }
                 val eventosDeferred = async {
                     try {
                         repository.getEventosDeLugar(venueId)
                     } catch (e: Exception) {
-                        Log.w("DetalleLugarViewModel", "No se pudieron cargar eventos del lugar $venueId: ${e.message}")
+                        e.printStackTrace()
                         emptyList()
                     }
                 }
@@ -73,6 +74,7 @@ class DetalleLugarViewModel @Inject constructor(
                     )
                 }
             } catch (e: HttpException) {
+                e.printStackTrace()
                 if (e.code() == 404) {
                     // Sección 8.3: 404 → recurso inexistente, mostrar mensaje claro y permitir volver
                     _uiState.update {
@@ -91,7 +93,8 @@ class DetalleLugarViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.e("DetalleLugarViewModel", "Error al cargar detalle del lugar $venueId: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,

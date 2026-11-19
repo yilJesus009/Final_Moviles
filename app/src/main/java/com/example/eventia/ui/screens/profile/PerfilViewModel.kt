@@ -64,8 +64,9 @@ class PerfilViewModel @Inject constructor(
     }
 
     fun cargarDatos() {
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null) }
             try {
                 // GET /me valida que el token siga vigente (si responde 401 se cierra la sesión)
                 val usuario = authRepository.getPerfil()
@@ -83,10 +84,12 @@ class PerfilViewModel @Inject constructor(
                     )
                 }
             } catch (e: SesionExpiradaException) {
+                e.printStackTrace()
                 // RF-11: el repositorio ya borró la sesión local; la pantalla navega al login
                 _uiState.update { it.copy(cargando = false, sesionExpirada = true) }
             } catch (e: Exception) {
-                Log.e("PerfilViewModel", "Error al cargar el perfil: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,

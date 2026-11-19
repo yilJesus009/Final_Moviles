@@ -38,8 +38,9 @@ class LugaresViewModel @Inject constructor(
     }
 
     fun cargarLugares() {
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null) }
             try {
                 val lista = repository.getLugares()
                 _uiState.update {
@@ -50,7 +51,8 @@ class LugaresViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("LugaresViewModel", "Error al cargar lugares: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,

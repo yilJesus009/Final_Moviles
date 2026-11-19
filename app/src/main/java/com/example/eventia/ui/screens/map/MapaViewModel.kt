@@ -57,15 +57,16 @@ class MapaViewModel @Inject constructor(
                 val listaCategorias = repository.getCategorias()
                 _uiState.update { it.copy(categorias = listaCategorias) }
             } catch (e: Exception) {
-                Log.e("MapaViewModel", "Error al cargar categorías: ${e.message}", e)
+                e.printStackTrace()
             }
         }
     }
 
     fun cargarEventos() {
+        val categoriaId = _uiState.value.categoriaSeleccionadaId
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            val categoriaId = _uiState.value.categoriaSeleccionadaId
-            _uiState.update { it.copy(cargando = true, error = null) }
             try {
                 // RF-07: el mapa respeta el filtro de categoría y omite eventos sin coordenadas válidas
                 val conUbicacion = repository.getEventos(categoriaId = categoriaId)
@@ -78,7 +79,8 @@ class MapaViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("MapaViewModel", "Error al cargar eventos del mapa: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,
