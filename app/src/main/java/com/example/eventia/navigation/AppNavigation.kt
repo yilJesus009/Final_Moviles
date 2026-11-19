@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -81,7 +82,8 @@ fun AppNavigation(
                 )
             ) {
                 DetalleEventoScreen(
-                    onBackClick = { navController.popBackStack() },
+                    // Patrón PracticaAPILibros: evita doble pop durante la transición de salida
+                    onBackClick = dropUnlessResumed { navController.popBackStack() },
                     onVenueClick = { venueId ->
                         navController.navigate(Screen.VenueDetail.createRoute(venueId))
                     },
@@ -92,7 +94,7 @@ fun AppNavigation(
             }
             composable(Screen.Venues.route) {
                 LugaresScreen(
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = dropUnlessResumed { navController.popBackStack() },
                     onVenueClick = { venueId ->
                         navController.navigate(Screen.VenueDetail.createRoute(venueId))
                     }
@@ -105,7 +107,7 @@ fun AppNavigation(
                 )
             ) {
                 DetalleLugarScreen(
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = dropUnlessResumed { navController.popBackStack() },
                     onEventClick = { eventId ->
                         navController.navigate(Screen.EventDetail.createRoute(eventId))
                     }
@@ -140,8 +142,8 @@ fun AppNavigation(
             }
             composable(Screen.Login.route) {
                 LoginScreen(
-                    onBackClick = { navController.popBackStack() },
-                    onLoginExitoso = { navController.popBackStack() },
+                    onBackClick = dropUnlessResumed { navController.popBackStack() },
+                    onLoginExitoso = dropUnlessResumed { navController.popBackStack() },
                     onRegistroClick = {
                         // Reemplaza Login por Registro para que al terminar regrese directo a la pantalla previa
                         navController.navigate(Screen.Register.route) {
@@ -152,10 +154,11 @@ fun AppNavigation(
             }
             composable(Screen.Register.route) {
                 RegistroScreen(
-                    onBackClick = { navController.popBackStack() },
-                    onRegistroExitoso = { navController.popBackStack() }
+                    onBackClick = dropUnlessResumed { navController.popBackStack() },
+                    onRegistroExitoso = dropUnlessResumed { navController.popBackStack() }
                 )
             }
         }
     }
 }
+
