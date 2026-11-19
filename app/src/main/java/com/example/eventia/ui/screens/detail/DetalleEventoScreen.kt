@@ -45,19 +45,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.eventia.R
+import com.example.eventia.models.Categoria
+import com.example.eventia.models.Evento
+import com.example.eventia.models.Lugar
+import com.example.eventia.ui.theme.EventiaTheme
 import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
  * Pantalla de Detalle del Evento (RF-02, RF-04, RF-05, RF-09, RF-12, RF-13).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleEventoScreen(
     onBackClick: () -> Unit,
@@ -67,11 +72,6 @@ fun DetalleEventoScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val formateadorFecha = remember {
-        DateTimeFormatter.ofPattern("EEEE d 'de' MMMM yyyy · HH:mm", Locale.forLanguageTag("es-BO"))
-    }
 
     LaunchedEffect(uiState.mensajeAviso) {
         uiState.mensajeAviso?.let { mensaje ->
@@ -87,6 +87,34 @@ fun DetalleEventoScreen(
         }
     }
 
+    DetalleEventoContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onBackClick = onBackClick,
+        onVenueClick = onVenueClick,
+        onToggleFavorite = viewModel::alternarFavorito,
+        onManageAttendance = viewModel::gestionarInscripcion,
+        onRetry = viewModel::cargarDetalle
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetalleEventoContent(
+    uiState: DetalleEventoUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onBackClick: () -> Unit,
+    onVenueClick: (Int) -> Unit = {},
+    onToggleFavorite: () -> Unit = {},
+    onManageAttendance: () -> Unit = {},
+    onRetry: () -> Unit = {}
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val formateadorFecha = remember {
+        DateTimeFormatter.ofPattern("EEEE d 'de' MMMM yyyy · HH:mm", Locale.forLanguageTag("es-BO"))
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -98,7 +126,7 @@ fun DetalleEventoScreen(
                 },
                 actions = {
                     if (uiState.evento != null) {
-                        TextButton(onClick = { viewModel.alternarFavorito() }) {
+                        TextButton(onClick = onToggleFavorite) {
                             Text(
                                 text = if (uiState.esFavorito) "♥ Favorito" else "♡ Favorito",
                                 color = if (uiState.esFavorito) {
@@ -140,7 +168,7 @@ fun DetalleEventoScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = uiState.error ?: "Error al cargar el evento",
+                            text = uiState.error,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
@@ -151,7 +179,7 @@ fun DetalleEventoScreen(
                                 Text("Volver")
                             }
                         } else {
-                            Button(onClick = { viewModel.cargarDetalle() }) {
+                            Button(onClick = onRetry) {
                                 Text("Reintentar")
                             }
                         }
@@ -160,7 +188,7 @@ fun DetalleEventoScreen(
             }
 
             uiState.evento != null -> {
-                val evento = uiState.evento!!
+                val evento = uiState.evento
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -270,7 +298,7 @@ fun DetalleEventoScreen(
 
                                 if (evento.estaInscrito) {
                                     OutlinedButton(
-                                        onClick = { viewModel.gestionarInscripcion() },
+                                        onClick = onManageAttendance,
                                         enabled = puedeActuar,
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -287,7 +315,7 @@ fun DetalleEventoScreen(
                                     }
                                 } else {
                                     Button(
-                                        onClick = { viewModel.gestionarInscripcion() },
+                                        onClick = onManageAttendance,
                                         enabled = puedeActuar,
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -389,5 +417,38 @@ fun DetalleEventoScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetalleEventoContentPreview() {
+    EventiaTheme {
+        DetalleEventoContent(
+            uiState = DetalleEventoUiState(
+                haySesion = true,
+                esFavorito = true,
+                evento = Evento(
+                    id = 2,
+                    titulo = "Noche de jazz en la plaza",
+                    resumen = "Clásicos del jazz con músicos invitados en vivo.",
+                    descripcion = "Una velada dedicada al swing, bebop y latin jazz con músicos invitados bajo las estrellas.",
+                    fechaInicio = ZonedDateTime.parse("2026-11-20T20:00:00-04:00"),
+                    imagenUrl = null,
+                    categoria = Categoria(3, "Música"),
+                    lugar = Lugar(
+                        id = 3,
+                        nombre = "Casa Municipal de la Cultura",
+                        direccion = "Libertad #65, Plaza 24 de Septiembre",
+                        latitud = -17.7829,
+                        longitud = -63.1825
+                    ),
+                    capacidad = 50,
+                    cuposDisponibles = 36,
+                    estaInscrito = false
+                )
+            ),
+            onBackClick = {}
+        )
     }
 }

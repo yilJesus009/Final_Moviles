@@ -37,20 +37,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.eventia.R
+import com.example.eventia.models.Categoria
+import com.example.eventia.models.Evento
+import com.example.eventia.models.Lugar
 import com.example.eventia.ui.components.TarjetaEvento
+import com.example.eventia.ui.theme.EventiaTheme
 import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 
 /**
  * Pantalla de Detalle del Lugar (Módulo B: RF-13 y RF-09).
  * Presenta imagen, dirección, descripción, horario, botón de indicaciones externas
  * y la lista de próximos eventos del lugar reutilizando [TarjetaEvento].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleLugarScreen(
     onBackClick: () -> Unit,
@@ -58,6 +63,23 @@ fun DetalleLugarScreen(
     viewModel: DetalleLugarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    DetalleLugarContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onEventClick = onEventClick,
+        onRetry = viewModel::cargarDetalleLugar
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetalleLugarContent(
+    uiState: DetalleLugarUiState,
+    onBackClick: () -> Unit,
+    onEventClick: (Int) -> Unit,
+    onRetry: () -> Unit = {}
+) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -101,7 +123,7 @@ fun DetalleLugarScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = uiState.error ?: "Error al cargar el lugar",
+                            text = uiState.error,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
@@ -112,7 +134,7 @@ fun DetalleLugarScreen(
                                 Text("Volver")
                             }
                         } else {
-                            Button(onClick = { viewModel.cargarDetalleLugar() }) {
+                            Button(onClick = onRetry) {
                                 Text("Reintentar")
                             }
                         }
@@ -121,7 +143,7 @@ fun DetalleLugarScreen(
             }
 
             uiState.lugar != null -> {
-                val lugar = uiState.lugar!!
+                val lugar = uiState.lugar
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -246,5 +268,42 @@ fun DetalleLugarScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetalleLugarContentPreview() {
+    val lugarEjemplo = Lugar(
+        id = 1,
+        nombre = "Centro Cultural Franco Alemán",
+        direccion = "Av. Velarde #200, Santa Cruz de la Sierra",
+        latitud = -17.7912,
+        longitud = -63.1814,
+        descripcion = "Espacio cultural dedicado a conciertos acústicos, exposiciones y talleres formativos.",
+        horario = "Lun a Sáb · 09:00 - 21:00"
+    )
+    EventiaTheme {
+        DetalleLugarContent(
+            uiState = DetalleLugarUiState(
+                lugar = lugarEjemplo,
+                eventosProximos = listOf(
+                    Evento(
+                        id = 1,
+                        titulo = "Taller práctico de fotografía urbana nocturna",
+                        resumen = "Aprende composición y larga exposición.",
+                        descripcion = "",
+                        fechaInicio = ZonedDateTime.parse("2026-11-18T18:30:00-04:00"),
+                        imagenUrl = null,
+                        categoria = Categoria(1, "Talleres"),
+                        lugar = lugarEjemplo,
+                        capacidad = 25,
+                        cuposDisponibles = 12
+                    )
+                )
+            ),
+            onBackClick = {},
+            onEventClick = {}
+        )
     }
 }

@@ -29,15 +29,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.eventia.ui.theme.EventiaTheme
 
 /**
  * Pantalla de creación de cuenta (RF-11).
  * Al registrarse el servidor devuelve token y usuario, así que la sesión queda iniciada directamente.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroScreen(
     onBackClick: () -> Unit,
@@ -52,6 +53,26 @@ fun RegistroScreen(
         }
     }
 
+    RegistroContent(
+        uiState = uiState,
+        onNombreChange = viewModel::cambiarNombre,
+        onEmailChange = viewModel::cambiarEmail,
+        onPasswordChange = viewModel::cambiarContrasena,
+        onRegisterClick = viewModel::registrarse,
+        onBackClick = onBackClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RegistroContent(
+    uiState: RegistroUiState,
+    onNombreChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onBackClick: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -82,7 +103,7 @@ fun RegistroScreen(
 
             OutlinedTextField(
                 value = uiState.nombre,
-                onValueChange = { viewModel.cambiarNombre(it) },
+                onValueChange = onNombreChange,
                 label = { Text("Nombre") },
                 singleLine = true,
                 isError = uiState.errorNombre != null,
@@ -93,7 +114,7 @@ fun RegistroScreen(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = uiState.email,
-                onValueChange = { viewModel.cambiarEmail(it) },
+                onValueChange = onEmailChange,
                 label = { Text("Correo electrónico") },
                 singleLine = true,
                 isError = uiState.errorEmail != null,
@@ -105,7 +126,7 @@ fun RegistroScreen(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = uiState.contrasena,
-                onValueChange = { viewModel.cambiarContrasena(it) },
+                onValueChange = onPasswordChange,
                 label = { Text("Contraseña (mínimo 8 caracteres)") },
                 singleLine = true,
                 isError = uiState.errorContrasena != null,
@@ -128,7 +149,7 @@ fun RegistroScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { viewModel.registrarse() },
+                onClick = onRegisterClick,
                 enabled = !uiState.cargando,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,5 +162,23 @@ fun RegistroScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RegistroContentPreview() {
+    EventiaTheme {
+        RegistroContent(
+            uiState = RegistroUiState(
+                nombre = "Ana Gómez",
+                email = "ana@eventia.test"
+            ),
+            onNombreChange = {},
+            onEmailChange = {},
+            onPasswordChange = {},
+            onRegisterClick = {},
+            onBackClick = {}
+        )
     }
 }

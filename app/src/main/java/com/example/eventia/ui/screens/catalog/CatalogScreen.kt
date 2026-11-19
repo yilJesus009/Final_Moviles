@@ -38,15 +38,20 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.eventia.models.Categoria
+import com.example.eventia.models.Evento
+import com.example.eventia.models.Lugar
 import com.example.eventia.ui.components.TarjetaEvento
+import com.example.eventia.ui.theme.EventiaTheme
+import java.time.ZonedDateTime
 
 /**
  * Pantalla del Catálogo de Eventos (Módulo A y C: RF-01, RF-02, RF-03, RF-04, RF-06, RF-14).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     onEventClick: (Int) -> Unit = {},
@@ -55,8 +60,6 @@ fun CatalogScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    // RF-02: conserva la posición de la lista al volver desde el detalle
-    val listState = rememberLazyListState()
 
     // RF-06 y RF-04: muestra avisos no bloqueantes en Snackbar
     LaunchedEffect(uiState.mensajeAviso) {
@@ -65,6 +68,37 @@ fun CatalogScreen(
             viewModel.consumirMensajeAviso()
         }
     }
+
+    CatalogContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onEventClick = onEventClick,
+        onVenuesClick = onVenuesClick,
+        onRefresh = viewModel::actualizarCatalogo,
+        onRetry = viewModel::cargarEventos,
+        onSearchQueryChange = viewModel::cambiarTextoBusqueda,
+        onCategorySelect = viewModel::seleccionarCategoria,
+        onClearFilters = viewModel::limpiarFiltros,
+        onToggleFavorite = viewModel::alternarFavorito
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CatalogContent(
+    uiState: CatalogoUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onEventClick: (Int) -> Unit = {},
+    onVenuesClick: () -> Unit = {},
+    onRefresh: () -> Unit = {},
+    onRetry: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
+    onCategorySelect: (Int?) -> Unit = {},
+    onClearFilters: () -> Unit = {},
+    onToggleFavorite: (Evento) -> Unit = {}
+) {
+    // RF-02: conserva la posición de la lista al volver desde el detalle
+    val listState = rememberLazyListState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -92,7 +126,7 @@ fun CatalogScreen(
                         Text("Lugares")
                     }
                     TextButton(
-                        onClick = { viewModel.actualizarCatalogo() },
+                        onClick = onRefresh,
                         enabled = !uiState.cargando && !uiState.actualizando
                     ) {
                         Text(if (uiState.actualizando) "Actualizando..." else "Actualizar")
@@ -122,7 +156,7 @@ fun CatalogScreen(
             // RF-03: Barra de búsqueda con debounce de 300 ms
             OutlinedTextField(
                 value = uiState.textoBusqueda,
-                onValueChange = { viewModel.cambiarTextoBusqueda(it) },
+                onValueChange = onSearchQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
@@ -130,7 +164,7 @@ fun CatalogScreen(
                 singleLine = true,
                 trailingIcon = {
                     if (uiState.textoBusqueda.isNotEmpty()) {
-                        TextButton(onClick = { viewModel.cambiarTextoBusqueda("") }) {
+                        TextButton(onClick = { onSearchQueryChange("") }) {
                             Text("✕")
                         }
                     }
@@ -153,7 +187,7 @@ fun CatalogScreen(
                     item {
                         FilterChip(
                             selected = uiState.categoriaSeleccionadaId == null,
-                            onClick = { viewModel.seleccionarCategoria(null) },
+                            onClick = { onCategorySelect(null) },
                             label = { Text("Todas") }
                         )
                     }
@@ -163,7 +197,7 @@ fun CatalogScreen(
                     ) { categoria ->
                         FilterChip(
                             selected = uiState.categoriaSeleccionadaId == categoria.id,
-                            onClick = { viewModel.seleccionarCategoria(categoria.id) },
+                            onClick = { onCategorySelect(categoria.id) },
                             label = { Text(categoria.nombre) }
                         )
                     }
@@ -171,7 +205,7 @@ fun CatalogScreen(
 
                 if (uiState.tieneFiltrosActivos) {
                     TextButton(
-                        onClick = { viewModel.limpiarFiltros() }
+                        onClick = onClearFilters
                     ) {
                         Text("Limpiar filtros")
                     }
@@ -183,7 +217,7 @@ fun CatalogScreen(
             // RF-06: Pull-to-refresh envolviendo los estados de carga, error, vacío y contenido
             PullToRefreshBox(
                 isRefreshing = uiState.actualizando,
-                onRefresh = { viewModel.actualizarCatalogo() },
+                onRefresh = onRefresh,
                 modifier = Modifier.fillMaxSize()
             ) {
                 when {
@@ -214,13 +248,13 @@ fun CatalogScreen(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = uiState.error ?: "Ocurrió un error al cargar el catálogo",
+                                    text = uiState.error,
                                     style = MaterialTheme.typography.bodyLarge,
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.error
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
-                                Button(onClick = { viewModel.cargarEventos() }) {
+                                Button(onClick = onRetry) {
                                     Text("Reintentar")
                                 }
                             }
@@ -248,7 +282,7 @@ fun CatalogScreen(
                                 )
                                 if (uiState.tieneFiltrosActivos) {
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    OutlinedButton(onClick = { viewModel.limpiarFiltros() }) {
+                                    OutlinedButton(onClick = onClearFilters) {
                                         Text("Limpiar filtros")
                                     }
                                 }
@@ -274,7 +308,7 @@ fun CatalogScreen(
                                     onClick = { onEventClick(evento.id) },
                                     accionDerecha = {
                                         TextButton(
-                                            onClick = { viewModel.alternarFavorito(evento) },
+                                            onClick = { onToggleFavorite(evento) },
                                             modifier = Modifier.semantics {
                                                 contentDescription = if (esFavorito) {
                                                     "Quitar ${evento.titulo} de favoritos"
@@ -300,5 +334,48 @@ fun CatalogScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CatalogContentPreview() {
+    EventiaTheme {
+        CatalogContent(
+            uiState = CatalogoUiState(
+                categorias = listOf(
+                    Categoria(1, "Talleres"),
+                    Categoria(2, "Arte"),
+                    Categoria(3, "Música")
+                ),
+                idsFavoritos = setOf(1),
+                eventos = listOf(
+                    Evento(
+                        id = 1,
+                        titulo = "Taller práctico de fotografía urbana nocturna",
+                        resumen = "Aprende composición, manejo de luz y larga exposición.",
+                        descripcion = "",
+                        fechaInicio = ZonedDateTime.parse("2026-11-18T18:30:00-04:00"),
+                        imagenUrl = null,
+                        categoria = Categoria(1, "Talleres"),
+                        lugar = Lugar(1, "Centro Cultural Franco Alemán", "Av. Velarde #200", -17.79, -63.18),
+                        capacidad = 25,
+                        cuposDisponibles = 12
+                    ),
+                    Evento(
+                        id = 2,
+                        titulo = "Noche de jazz en la plaza",
+                        resumen = "Clásicos del jazz con músicos invitados en vivo.",
+                        descripcion = "",
+                        fechaInicio = ZonedDateTime.parse("2026-11-20T20:00:00-04:00"),
+                        imagenUrl = null,
+                        categoria = Categoria(3, "Música"),
+                        lugar = Lugar(3, "Casa Municipal de la Cultura", "Libertad #65", -17.78, -63.18),
+                        capacidad = 50,
+                        cuposDisponibles = 36
+                    )
+                )
+            )
+        )
     }
 }

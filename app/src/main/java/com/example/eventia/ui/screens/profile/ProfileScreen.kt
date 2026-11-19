@@ -26,12 +26,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.eventia.models.Categoria
 import com.example.eventia.models.Evento
+import com.example.eventia.models.Lugar
 import com.example.eventia.models.Usuario
 import com.example.eventia.ui.components.TarjetaEvento
+import com.example.eventia.ui.theme.EventiaTheme
+import java.time.ZonedDateTime
 
 /**
  * Pantalla de Perfil (RF-11 y RF-12).
@@ -246,5 +251,37 @@ private fun androidx.compose.foundation.lazy.LazyListScope.seccionInscripciones(
                 onClick = { onEventClick(evento.id) }
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProfileConSesionPreview() {
+    val usuarioEjemplo = Usuario(1, "Ana Gómez", "ana@eventia.test")
+    EventiaTheme {
+        ConSesion(
+            usuario = usuarioEjemplo,
+            uiState = PerfilUiState(
+                usuario = usuarioEjemplo,
+                proximas = listOf(
+                    Evento(
+                        id = 3,
+                        titulo = "Exposición Interactiva: Luz, Memoria y Territorio",
+                        resumen = "Instalación inmersiva de arte contemporáneo.",
+                        descripcion = "",
+                        fechaInicio = ZonedDateTime.parse("2026-11-22T19:00:00-04:00"),
+                        imagenUrl = null,
+                        categoria = Categoria(2, "Arte y Exposiciones"),
+                        lugar = Lugar(2, "Manzana Uno Espacio de Arte", "Plaza 24 de Septiembre", -17.78, -63.18),
+                        capacidad = 40,
+                        cuposDisponibles = 18,
+                        estaInscrito = true
+                    )
+                )
+            ),
+            onEventClick = {},
+            onReintentar = {},
+            onCerrarSesion = {}
+        )
     }
 }

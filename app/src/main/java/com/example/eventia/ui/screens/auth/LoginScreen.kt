@@ -29,16 +29,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.eventia.ui.theme.EventiaTheme
 
 /**
  * Pantalla de inicio de sesión (RF-11).
  * Al iniciar sesión correctamente se llama a [onLoginExitoso], que regresa a la pantalla anterior
  * (por ejemplo, al detalle del evento si el usuario venía de intentar inscribirse - RF-12).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onBackClick: () -> Unit,
@@ -54,6 +55,26 @@ fun LoginScreen(
         }
     }
 
+    LoginContent(
+        uiState = uiState,
+        onEmailChange = viewModel::cambiarEmail,
+        onPasswordChange = viewModel::cambiarContrasena,
+        onLoginClick = viewModel::iniciarSesion,
+        onBackClick = onBackClick,
+        onRegistroClick = onRegistroClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginContent(
+    uiState: LoginUiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onLoginClick: () -> Unit,
+    onBackClick: () -> Unit,
+    onRegistroClick: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -91,7 +112,7 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = uiState.email,
-                onValueChange = { viewModel.cambiarEmail(it) },
+                onValueChange = onEmailChange,
                 label = { Text("Correo electrónico") },
                 singleLine = true,
                 isError = uiState.errorEmail != null,
@@ -103,7 +124,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = uiState.contrasena,
-                onValueChange = { viewModel.cambiarContrasena(it) },
+                onValueChange = onPasswordChange,
                 label = { Text("Contraseña") },
                 singleLine = true,
                 isError = uiState.errorContrasena != null,
@@ -127,7 +148,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { viewModel.iniciarSesion() },
+                onClick = onLoginClick,
                 enabled = !uiState.cargando,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,5 +165,20 @@ fun LoginScreen(
                 Text("¿No tienes cuenta? Regístrate")
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoginContentPreview() {
+    EventiaTheme {
+        LoginContent(
+            uiState = LoginUiState(email = "ana@eventia.test"),
+            onEmailChange = {},
+            onPasswordChange = {},
+            onLoginClick = {},
+            onBackClick = {},
+            onRegistroClick = {}
+        )
     }
 }

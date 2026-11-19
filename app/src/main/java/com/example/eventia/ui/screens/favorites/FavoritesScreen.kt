@@ -40,10 +40,16 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.eventia.models.Categoria
+import com.example.eventia.models.Evento
+import com.example.eventia.models.Lugar
 import com.example.eventia.ui.components.TarjetaEvento
+import com.example.eventia.ui.theme.EventiaTheme
+import java.time.ZonedDateTime
 
 /**
  * Pantalla de Eventos Favoritos (Módulo C: RF-04, RF-05, RF-13).
@@ -59,7 +65,6 @@ fun FavoritesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val listState = rememberLazyListState()
     val context = LocalContext.current
     val sinConexion = rememberEstadoSinConexion(context)
 
@@ -77,6 +82,25 @@ fun FavoritesScreen(
             viewModel.limpiarEliminadoReciente()
         }
     }
+
+    FavoritesContent(
+        uiState = uiState,
+        sinConexion = sinConexion,
+        snackbarHostState = snackbarHostState,
+        onEventClick = onEventClick,
+        onRemoveFavorite = viewModel::quitarFavorito
+    )
+}
+
+@Composable
+fun FavoritesContent(
+    uiState: FavoritosUiState,
+    sinConexion: Boolean = false,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onEventClick: (Int) -> Unit = {},
+    onRemoveFavorite: (Evento) -> Unit = {}
+) {
+    val listState = rememberLazyListState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -163,7 +187,7 @@ fun FavoritesScreen(
                                 onClick = { onEventClick(evento.id) },
                                 accionDerecha = {
                                     TextButton(
-                                        onClick = { viewModel.quitarFavorito(evento) },
+                                        onClick = { onRemoveFavorite(evento) },
                                         modifier = Modifier.semantics {
                                             contentDescription = "Quitar ${evento.titulo} de favoritos"
                                         }
@@ -180,6 +204,32 @@ fun FavoritesScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FavoritesContentPreview() {
+    EventiaTheme {
+        FavoritesContent(
+            uiState = FavoritosUiState(
+                favoritos = listOf(
+                    Evento(
+                        id = 1,
+                        titulo = "Noche de jazz en la plaza",
+                        resumen = "Clásicos del jazz con músicos invitados en vivo.",
+                        descripcion = "",
+                        fechaInicio = ZonedDateTime.parse("2026-11-20T20:00:00-04:00"),
+                        imagenUrl = null,
+                        categoria = Categoria(3, "Música"),
+                        lugar = Lugar(3, "Casa Municipal de la Cultura", "Libertad #65", -17.78, -63.18),
+                        capacidad = 50,
+                        cuposDisponibles = 36
+                    )
+                )
+            ),
+            sinConexion = true
+        )
     }
 }
 

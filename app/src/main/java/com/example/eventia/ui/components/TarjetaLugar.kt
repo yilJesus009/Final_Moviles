@@ -21,10 +21,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.eventia.R
 import com.example.eventia.models.Lugar
+import com.example.eventia.ui.theme.EventiaTheme
 
 /**
  * Componente de tarjeta para un lugar (venue) en la lista de lugares (RF-13).
@@ -106,5 +108,23 @@ fun TarjetaLugar(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TarjetaLugarPreview() {
+    EventiaTheme {
+        TarjetaLugar(
+            lugar = Lugar(
+                id = 1,
+                nombre = "Centro Cultural Franco Alemán",
+                direccion = "Av. Velarde #200, Santa Cruz de la Sierra",
+                latitud = -17.7912,
+                longitud = -63.1814,
+                cantidadEventosProximos = 2
+            ),
+            onClick = {}
+        )
     }
 }

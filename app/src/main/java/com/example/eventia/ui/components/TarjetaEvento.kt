@@ -22,10 +22,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.eventia.R
+import com.example.eventia.models.Categoria
 import com.example.eventia.models.Evento
+import com.example.eventia.models.Lugar
+import com.example.eventia.ui.theme.EventiaTheme
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -142,5 +147,33 @@ fun TarjetaEvento(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TarjetaEventoPreview() {
+    EventiaTheme {
+        TarjetaEvento(
+            evento = Evento(
+                id = 1,
+                titulo = "Noche de jazz en la plaza",
+                resumen = "Clásicos del jazz con músicos invitados en vivo bajo las estrellas.",
+                descripcion = "",
+                fechaInicio = ZonedDateTime.parse("2026-11-20T20:00:00-04:00"),
+                imagenUrl = null,
+                categoria = Categoria(id = 3, nombre = "Música"),
+                lugar = Lugar(
+                    id = 3,
+                    nombre = "Casa Municipal de la Cultura",
+                    direccion = "Libertad #65, Plaza 24 de Septiembre",
+                    latitud = -17.7829,
+                    longitud = -63.1825
+                ),
+                capacidad = 50,
+                cuposDisponibles = 36
+            ),
+            onClick = {}
+        )
     }
 }

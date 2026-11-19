@@ -24,16 +24,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.eventia.models.Lugar
 import com.example.eventia.ui.components.TarjetaLugar
+import com.example.eventia.ui.theme.EventiaTheme
 
 /**
  * Pantalla de Lista de Lugares (Módulo B: RF-13).
  * Muestra todos los lugares con su nombre, dirección, imagen y cantidad de eventos próximos.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LugaresScreen(
     onBackClick: () -> Unit,
@@ -41,6 +43,23 @@ fun LugaresScreen(
     viewModel: LugaresViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LugaresContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onVenueClick = onVenueClick,
+        onRetry = viewModel::cargarLugares
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LugaresContent(
+    uiState: LugaresUiState,
+    onBackClick: () -> Unit,
+    onVenueClick: (Int) -> Unit,
+    onRetry: () -> Unit
+) {
     val listState = rememberLazyListState()
 
     Scaffold(
@@ -81,13 +100,13 @@ fun LugaresScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = uiState.error ?: "Error al cargar lugares",
+                            text = uiState.error,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.cargarLugares() }) {
+                        Button(onClick = onRetry) {
                             Text("Reintentar")
                         }
                     }
@@ -132,5 +151,37 @@ fun LugaresScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LugaresContentPreview() {
+    EventiaTheme {
+        LugaresContent(
+            uiState = LugaresUiState(
+                lugares = listOf(
+                    Lugar(
+                        id = 1,
+                        nombre = "Centro Cultural Franco Alemán",
+                        direccion = "Av. Velarde #200, Santa Cruz de la Sierra",
+                        latitud = -17.7912,
+                        longitud = -63.1814,
+                        cantidadEventosProximos = 2
+                    ),
+                    Lugar(
+                        id = 2,
+                        nombre = "Manzana Uno Espacio de Arte",
+                        direccion = "Calle Independencia esq. Ayacucho, Plaza 24 de Septiembre",
+                        latitud = -17.7838,
+                        longitud = -63.1816,
+                        cantidadEventosProximos = 3
+                    )
+                )
+            ),
+            onBackClick = {},
+            onVenueClick = {},
+            onRetry = {}
+        )
     }
 }
