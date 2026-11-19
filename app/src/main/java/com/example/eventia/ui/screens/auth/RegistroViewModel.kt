@@ -1,10 +1,10 @@
 package com.example.eventia.ui.screens.auth
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eventia.repositories.AuthRepository
 import com.example.eventia.repositories.DatosInvalidosException
+import com.example.eventia.validation.AuthValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,9 +50,10 @@ class RegistroViewModel @Inject constructor(
 
     fun registrarse() {
         val estado = _uiState.value
-        val errorNombre = if (estado.nombre.isBlank()) "Ingresa tu nombre" else null
-        val errorEmail = validarEmail(estado.email)
-        val errorContrasena = validarContrasena(estado.contrasena)
+        // Validación local desacoplada ANTES de llamar al servidor
+        val errorNombre = AuthValidator.validateName(estado.nombre)
+        val errorEmail = AuthValidator.validateEmail(estado.email)
+        val errorContrasena = AuthValidator.validatePassword(estado.contrasena)
         if (errorNombre != null || errorEmail != null || errorContrasena != null) {
             _uiState.update {
                 it.copy(
@@ -64,10 +65,15 @@ class RegistroViewModel @Inject constructor(
             return
         }
 
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null) }
             try {
-                repository.registrar(estado.nombre, estado.email, estado.contrasena)
+                repository.registrar(
+                    nombre = estado.nombre.trim(),
+                    email = AuthValidator.normalizeEmail(estado.email),
+                    contrasena = estado.contrasena
+                )
                 _uiState.update { it.copy(cargando = false, registroExitoso = true) }
             } catch (e: DatosInvalidosException) {
                 _uiState.update {
@@ -80,7 +86,8 @@ class RegistroViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("RegistroViewModel", "Error al registrarse: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,

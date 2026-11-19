@@ -1,11 +1,10 @@
 package com.example.eventia.ui.screens.auth
 
-import android.util.Log
-import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eventia.repositories.AuthRepository
 import com.example.eventia.repositories.DatosInvalidosException
+import com.example.eventia.validation.AuthValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,18 +45,19 @@ class LoginViewModel @Inject constructor(
 
     fun iniciarSesion() {
         val estado = _uiState.value
-        // Validación local ANTES de llamar al servidor
-        val errorEmail = validarEmail(estado.email)
-        val errorContrasena = validarContrasena(estado.contrasena)
+        // Validación local desacoplada ANTES de llamar al servidor
+        val errorEmail = AuthValidator.validateEmail(estado.email)
+        val errorContrasena = AuthValidator.validatePassword(estado.contrasena)
         if (errorEmail != null || errorContrasena != null) {
             _uiState.update { it.copy(errorEmail = errorEmail, errorContrasena = errorContrasena) }
             return
         }
 
+        // Regla agents.md: Asignar el estado Loading antes de lanzar la corrutina
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null) }
             try {
-                repository.login(estado.email, estado.contrasena)
+                repository.login(AuthValidator.normalizeEmail(estado.email), estado.contrasena)
                 _uiState.update { it.copy(cargando = false, sesionIniciada = true) }
             } catch (e: DatosInvalidosException) {
                 // 400 / 422 / 401: se muestra el mensaje del servidor junto al campo correspondiente
@@ -70,7 +70,8 @@ class LoginViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("LoginViewModel", "Error al iniciar sesión: ${e.message}", e)
+                // Regla agents.md: Registrar con e.printStackTrace() y mensaje claro para el usuario
+                e.printStackTrace()
                 _uiState.update {
                     it.copy(
                         cargando = false,
@@ -82,19 +83,3 @@ class LoginViewModel @Inject constructor(
     }
 }
 
-// Validaciones compartidas entre Login y Registro
-fun validarEmail(email: String): String? {
-    return when {
-        email.isBlank() -> "Ingresa tu correo electrónico"
-        !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> "Ingresa un correo válido"
-        else -> null
-    }
-}
-
-fun validarContrasena(contrasena: String): String? {
-    return when {
-        contrasena.isBlank() -> "Ingresa tu contraseña"
-        contrasena.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
-        else -> null
-    }
-}
