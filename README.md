@@ -67,23 +67,29 @@ La aplicación implementa el patrón **MVVM (Model - View - ViewModel)** combina
 ---
 
 ## 5. Configuración de la API y del Mapa
-1. **URL base del backend:** se configura en la constante `BASE_URL` dentro de `app/src/main/java/com/example/eventia/repositories/RetrofitRepository.kt`:
+1. **URL base del backend:** configurada en la constante `BASE_URL` dentro de `app/src/main/java/com/example/eventia/repositories/RetrofitRepository.kt`:
    ```kotlin
-   const val BASE_URL = "https://eventia-api.example.com/"
+   const val BASE_URL = "https://eventia.jmacboy.dev/api/"
    ```
-2. **Mapa:** utiliza **osmdroid (OpenStreetMap)**, por lo que funciona directamente sin necesidad de configurar una API Key de Google Cloud.
+2. **Credenciales de prueba del backend:**
+   * **Correo:** `ana@eventia.test`
+   * **Contraseña:** `eventia123`
+3. **Mapa:** utiliza **osmdroid (OpenStreetMap)**, por lo que funciona directamente sin necesidad de configurar una API Key de Google Cloud.
 
 ---
 
-## 6. Instrucciones de Compilación y Ejecución
+## 6. Instrucciones de Compilación, Pruebas y Ejecución
 1. Clonar el repositorio:
    ```bash
    git clone https://github.com/yilJesus009/Final_Moviles.git
    ```
 2. Abrir la carpeta en **Android Studio**.
-3. Configurar la constante `BASE_URL` en `RetrofitRepository.kt` con la URL publicada en la plataforma del curso.
-4. Sincronizar el proyecto con Gradle (**Sync Project with Gradle Files**).
-5. Ejecutar en un emulador o dispositivo físico con **Android 13 (API 33)** o superior.
+3. Sincronizar el proyecto con Gradle (**Sync Project with Gradle Files**).
+4. Ejecutar las pruebas unitarias con JUnit:
+   ```bash
+   ./gradlew testDebugUnitTest
+   ```
+5. Ejecutar la aplicación en un emulador o dispositivo físico con **Android 13 (API 33)** o superior.
 
 ---
 
