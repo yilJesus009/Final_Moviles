@@ -9,12 +9,9 @@ import retrofit2.converter.gson.GsonConverterFactory
  */
 object RetrofitRepository {
     /**
-     * URL base de la API:
-     * - Celular Físico conectado por USB: "http://localhost:8000/api/" (usando adb reverse tcp:8000 tcp:8000)
-     * - Emulador Android Studio: "http://10.0.2.2:8000/api/"
-     * - Servidor en la nube: la URL pública terminada en "/api/"
+     * URL base oficial del backend de la asignatura Eventia.
      */
-    const val BASE_URL = "http://localhost:8000/api/"
+    const val BASE_URL = "https://eventia.jmacboy.dev/api/"
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()

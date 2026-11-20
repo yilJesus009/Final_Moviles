@@ -1,7 +1,7 @@
 package com.example.eventia.repositories
 
 import com.example.eventia.api.models.ErrorApiDto
-import com.google.gson.Gson
+import com.google.gson.JsonParser
 import retrofit2.HttpException
 
 /**
@@ -28,12 +28,44 @@ class DatosInvalidosException(
 
 /**
  * Lee el cuerpo de error del backend { "code", "message", "fields" }.
+ * Soporta tanto valores de tipo texto simple ("email": "...") como listas de Laravel ("email": ["..."]).
  * Si el cuerpo no tiene ese formato devuelve null en lugar de fallar.
  */
 fun HttpException.leerErrorApi(): ErrorApiDto? {
+    val cuerpo = try {
+        response()?.errorBody()?.string()
+    } catch (e: Exception) {
+        null
+    }
+    return parsearErrorApi(cuerpo)
+}
+
+fun parsearErrorApi(cuerpo: String?): ErrorApiDto? {
+    if (cuerpo.isNullOrBlank()) return null
     return try {
-        val cuerpo = response()?.errorBody()?.string() ?: return null
-        Gson().fromJson(cuerpo, ErrorApiDto::class.java)
+        val obj = JsonParser.parseString(cuerpo).asJsonObject
+        val codigo = obj.get("code")?.takeIf { !it.isJsonNull }?.asString
+        val mensaje = obj.get("message")?.takeIf { !it.isJsonNull }?.asString
+        val camposMap = mutableMapOf<String, String>()
+        val fieldsElement = obj.get("fields")
+        if (fieldsElement != null && fieldsElement.isJsonObject) {
+            for ((clave, valor) in fieldsElement.asJsonObject.entrySet()) {
+                when {
+                    valor.isJsonPrimitive -> camposMap[clave] = valor.asString
+                    valor.isJsonArray && valor.asJsonArray.size() > 0 -> {
+                        val primero = valor.asJsonArray[0]
+                        if (primero != null && !primero.isJsonNull) {
+                            camposMap[clave] = primero.asString
+                        }
+                    }
+                }
+            }
+        }
+        ErrorApiDto(
+            codigo = codigo,
+            mensaje = mensaje,
+            campos = camposMap
+        )
     } catch (e: Exception) {
         null
     }
