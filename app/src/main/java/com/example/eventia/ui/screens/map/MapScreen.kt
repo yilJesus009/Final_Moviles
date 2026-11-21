@@ -230,7 +230,8 @@ private fun MapaOsm(
 
     // osmdroid exige definir un userAgent antes de crear el MapView para poder descargar los mosaicos
     val mapView = remember {
-        Configuration.getInstance().userAgentValue = context.packageName
+//        Configuration.getInstance().userAgentValue = context.packageName
+        Configuration.getInstance().userAgentValue = "Eventia-NUR/1.0 (contacto: giljesusgilpantoja@gmail.com)"
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
